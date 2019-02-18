@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
@@ -87,6 +88,8 @@ import io.swagger.annotations.ApiResponses;
 @Path("/")
 public class AtlasService {
 
+    static final String ATLASMAP_ADM_PATH = "atlasmap.adm.path";
+
     private static final Logger LOG = LoggerFactory.getLogger(AtlasService.class);
 
     private final DefaultAtlasContextFactory atlasContextFactory = DefaultAtlasContextFactory.getInstance();
@@ -101,7 +104,7 @@ public class AtlasService {
     private AtlasLibraryLoader libraryLoader;
 
     public AtlasService() throws AtlasException {
-        this.defaultContext = atlasContextFactory.createContext(new AtlasMapping());
+        this.defaultContext = createDefaultContext();
         this.libraryLoader = new AtlasLibraryLoader(libFolder);
         // Add atlas-core in case it runs on modular class loader
         this.libraryLoader.addAlternativeLoader(DefaultAtlasFieldActionService.class.getClassLoader());
@@ -111,6 +114,16 @@ public class AtlasService {
                 ((DefaultAtlasFieldActionService)atlasContextFactory.getFieldActionService()).init(libraryLoader);
             }
         });
+    }
+
+    private AtlasContext createDefaultContext() throws AtlasException {
+        String atlasmapAdmPath = System.getProperty(ATLASMAP_ADM_PATH);
+        if (atlasmapAdmPath != null) {
+            URI atlasMappingUri = new File(atlasmapAdmPath).toURI();
+            return atlasContextFactory.createContext(atlasMappingUri);
+        } else {
+            return atlasContextFactory.createContext(new AtlasMapping());
+        }
     }
 
     @GET
